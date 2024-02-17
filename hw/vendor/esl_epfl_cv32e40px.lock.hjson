@@ -8,7 +8,7 @@
 {
   upstream:
   {
-    url: https://github.com/esl-epfl/cv32e40px.git
-    rev: 49770e7dd5d569f440810866f4f33ce6a4f7ef1f
+    url: https://github.com/vlsi-lab/cv32e40px.git
+    rev: 6dd5d29b54189c82ef930ef63c65740b1f50176d
   }
 }
