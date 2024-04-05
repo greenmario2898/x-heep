@@ -269,14 +269,6 @@ module core_v_mini_mcu
     output logic gpio_30_oe_o,
 
 
-    // eXtension interface
-    if_xif.cpu_compressed xif_compressed_if,
-    if_xif.cpu_issue      xif_issue_if,
-    if_xif.cpu_commit     xif_commit_if,
-    if_xif.cpu_mem        xif_mem_if,
-    if_xif.cpu_mem_result xif_mem_result_if,
-    if_xif.cpu_result     xif_result_if,
-
     output reg_req_t pad_req_o,
     input  reg_rsp_t pad_resp_i,
 
@@ -317,8 +309,23 @@ module core_v_mini_mcu
 
     output logic [31:0] exit_value_o,
 
+    output logic             external_cpu_clk_o,
+    output logic             external_cpu_rst_no,
+    input  obi_req_t         external_cpu_core_instr_req_i,
+    output obi_resp_t        external_cpu_core_instr_resp_o,
+    input  obi_req_t         external_cpu_core_data_req_i,
+    output obi_resp_t        external_cpu_core_data_resp_o,
+    output logic      [31:0] external_cpu_irq_o,
+    input  logic             external_cpu_irq_ack_i,
+    input  logic      [ 4:0] external_cpu_irq_id_i,
+    output logic             external_cpu_debug_req_o,
+    input  logic             external_cpu_core_sleep_i,
+
     input logic ext_dma_slot_tx_i,
     input logic ext_dma_slot_rx_i
+
+
+
 );
 
   import core_v_mini_mcu_pkg::*;
@@ -448,35 +455,17 @@ module core_v_mini_mcu
     rv_timer_intr[2],
     rv_timer_intr[1]
   };
-
-  cpu_subsystem #(
-      .BOOT_ADDR(BOOT_ADDR),
-      .COREV_PULP(COREV_PULP),
-      .FPU(FPU),
-      .ZFINX(ZFINX),
-      .NUM_MHPMCOUNTERS(NUM_MHPMCOUNTERS),
-      .DM_HALTADDRESS(DM_HALTADDRESS),
-      .X_EXT(X_EXT)
-  ) cpu_subsystem_i (
-      // Clock and Reset
-      .clk_i,
-      .rst_ni(cpu_subsystem_rst_n && debug_reset_n),
-      .core_instr_req_o(core_instr_req),
-      .core_instr_resp_i(core_instr_resp),
-      .core_data_req_o(core_data_req),
-      .core_data_resp_i(core_data_resp),
-      .xif_compressed_if,
-      .xif_issue_if,
-      .xif_commit_if,
-      .xif_mem_if,
-      .xif_mem_result_if,
-      .xif_result_if,
-      .irq_i(intr),
-      .irq_ack_o(irq_ack),
-      .irq_id_o(irq_id_out),
-      .debug_req_i(debug_core_req),
-      .core_sleep_o(core_sleep)
-  );
+  assign external_cpu_clk_o = clk_i;
+  assign external_cpu_rst_no = cpu_subsystem_rst_n && debug_reset_n;
+  assign core_instr_req = external_cpu_core_instr_req_i;
+  assign external_cpu_core_instr_resp_o = core_instr_resp;
+  assign core_data_req = external_cpu_core_data_req_i;
+  assign external_cpu_core_data_resp_o = core_data_resp;
+  assign external_cpu_irq_o = intr;
+  assign irq_ack = external_cpu_irq_ack_i;
+  assign irq_id_out = external_cpu_irq_id_i;
+  assign external_cpu_debug_req_o = debug_core_req;
+  assign core_sleep = external_cpu_core_sleep_i;
 
   debug_subsystem #(
       .JTAG_IDCODE(JTAG_IDCODE)

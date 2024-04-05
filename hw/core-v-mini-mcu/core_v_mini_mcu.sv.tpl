@@ -22,7 +22,7 @@ module core_v_mini_mcu
 % for pad in pad_list:
 ${pad.core_v_mini_mcu_interface}
 % endfor
-
+% if cpu_type != "none":
     // eXtension interface
     if_xif.cpu_compressed xif_compressed_if,
     if_xif.cpu_issue      xif_issue_if,
@@ -30,6 +30,7 @@ ${pad.core_v_mini_mcu_interface}
     if_xif.cpu_mem        xif_mem_if,
     if_xif.cpu_mem_result xif_mem_result_if,
     if_xif.cpu_result     xif_result_if,
+% endif
 
     output reg_req_t pad_req_o,
     input  reg_rsp_t pad_resp_i,
@@ -70,9 +71,26 @@ ${pad.core_v_mini_mcu_interface}
     output logic [EXT_DOMAINS_RND-1:0] external_subsystem_clkgate_en_no,
 
     output logic [31:0] exit_value_o,
+% if cpu_type == "none":
+
+    output logic      external_cpu_clk_o,
+    output logic      external_cpu_rst_no,
+    input  obi_req_t  external_cpu_core_instr_req_i,
+    output obi_resp_t external_cpu_core_instr_resp_o,
+    input  obi_req_t  external_cpu_core_data_req_i,
+    output obi_resp_t external_cpu_core_data_resp_o,
+    output logic [31:0] external_cpu_irq_o,
+    input  logic        external_cpu_irq_ack_i,
+    input  logic [ 4:0] external_cpu_irq_id_i,
+    output logic        external_cpu_debug_req_o,
+    input  logic        external_cpu_core_sleep_i,
+% endif
 
     input logic ext_dma_slot_tx_i,
     input logic ext_dma_slot_rx_i
+
+
+
 );
 
   import core_v_mini_mcu_pkg::*;
@@ -202,6 +220,7 @@ ${pad.core_v_mini_mcu_interface}
     rv_timer_intr[2],
     rv_timer_intr[1]
   };
+% if cpu_type != "none":
 
   cpu_subsystem #(
       .BOOT_ADDR(BOOT_ADDR),
@@ -231,6 +250,20 @@ ${pad.core_v_mini_mcu_interface}
       .debug_req_i(debug_core_req),
       .core_sleep_o(core_sleep)
   );
+%endif 
+%if cpu_type == "none":
+  assign external_cpu_clk_o = clk_i;
+  assign external_cpu_rst_no = cpu_subsystem_rst_n && debug_reset_n;
+  assign core_instr_req = external_cpu_core_instr_req_i;
+  assign external_cpu_core_instr_resp_o = core_instr_resp;
+  assign core_data_req = external_cpu_core_data_req_i;
+  assign external_cpu_core_data_resp_o = core_data_resp;
+  assign external_cpu_irq_o = intr;
+  assign irq_ack = external_cpu_irq_ack_i;
+  assign irq_id_out = external_cpu_irq_id_i;
+  assign external_cpu_debug_req_o = debug_core_req;
+  assign core_sleep = external_cpu_core_sleep_i;
+%endif
 
   debug_subsystem #(
       .JTAG_IDCODE(JTAG_IDCODE)

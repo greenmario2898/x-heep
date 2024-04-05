@@ -60,6 +60,70 @@ module testharness #(
   localparam EXT_DOMAINS_RND = core_v_mini_mcu_pkg::EXTERNAL_DOMAINS == 0 ? 1 : core_v_mini_mcu_pkg::EXTERNAL_DOMAINS;
   localparam NEXT_INT_RND = core_v_mini_mcu_pkg::NEXT_INT == 0 ? 1 : core_v_mini_mcu_pkg::NEXT_INT;
 
+`ifdef NO_CPU
+  logic external_cpu_clk;
+  logic external_cpu_rst;
+  obi_req_t external_cpu_core_instr_req;
+  obi_resp_t external_cpu_core_instr_resp;
+  obi_req_t external_cpu_core_data_req;
+  obi_resp_t external_cpu_core_data_resp;
+  logic [31:0] external_cpu_irq;
+  logic external_cpu_irq_ack;
+  logic [4:0] external_cpu_irq_id;
+  logic external_cpu_debug_req;
+  logic external_cpu_core_sleep;
+  assign external_cpu_core_instr_req.wdata = '0;
+  assign external_cpu_core_instr_req.we    = '0;
+  assign external_cpu_core_instr_req.be    = 4'b1111;
+  cv32e40p_top #(
+      .COREV_PULP      (COREV_PULP),
+      .COREV_CLUSTER   (0),
+      .FPU             (FPU),
+      .ZFINX           (ZFINX),
+      .NUM_MHPMCOUNTERS(1)
+  ) cv32e40p_top_i (
+      .clk_i (external_cpu_clk),
+      .rst_ni(external_cpu_rst),
+
+      .pulp_clock_en_i(1'b1),
+      .scan_cg_en_i   (1'b0),
+
+      .boot_addr_i        (core_v_mini_mcu_pkg::BOOTROM_START_ADDRESS),
+      .mtvec_addr_i       (32'h0),
+      .dm_halt_addr_i     (core_v_mini_mcu_pkg::DEBUG_START_ADDRESS + 32'h00000800),
+      .hart_id_i          (32'h0),
+      .dm_exception_addr_i(32'h0),
+
+      .instr_addr_o  (external_cpu_core_instr_req.addr),
+      .instr_req_o   (external_cpu_core_instr_req.req),
+      .instr_rdata_i (external_cpu_core_instr_resp.rdata),
+      .instr_gnt_i   (external_cpu_core_instr_resp.gnt),
+      .instr_rvalid_i(external_cpu_core_instr_resp.rvalid),
+
+      .data_addr_o  (external_cpu_core_data_req.addr),
+      .data_wdata_o (external_cpu_core_data_req.wdata),
+      .data_we_o    (external_cpu_core_data_req.we),
+      .data_req_o   (external_cpu_core_data_req.req),
+      .data_be_o    (external_cpu_core_data_req.be),
+      .data_rdata_i (external_cpu_core_data_resp.rdata),
+      .data_gnt_i   (external_cpu_core_data_resp.gnt),
+      .data_rvalid_i(external_cpu_core_data_resp.rvalid),
+
+      .irq_i    (external_cpu_irq),
+      .irq_ack_o(external_cpu_irq_ack),
+      .irq_id_o (external_cpu_irq_id),
+
+      .debug_req_i      (external_cpu_debug_req),
+      .debug_havereset_o(),
+      .debug_running_o  (),
+      .debug_halted_o   (),
+
+      .fetch_enable_i('1),
+      .core_sleep_o  (external_cpu_core_sleep)
+  );
+
+`endif
+
   wire uart_rx;
   wire uart_tx;
   logic sim_jtag_enable = (JTAG_DPI == 1);
@@ -125,6 +189,7 @@ module testharness #(
   logic [EXT_DOMAINS_RND-1:0] external_ram_banks_set_retentive_n;
   logic [EXT_DOMAINS_RND-1:0] external_subsystem_clkgate_en_n;
 
+`ifndef NO_CPU
   // eXtension Interface
   if_xif #(
       .X_NUM_RS(fpu_ss_pkg::X_NUM_RS),
@@ -134,6 +199,7 @@ module testharness #(
       .X_RFW_WIDTH(fpu_ss_pkg::X_RFW_WIDTH),
       .X_MISA(fpu_ss_pkg::X_MISA)
   ) ext_if ();
+`endif
 
   always_comb begin
     // All interrupt lines set to zero by default
@@ -156,6 +222,10 @@ module testharness #(
     $display("%t: the parameter USE_EXTERNAL_DEVICE_EXAMPLE is %x", $time,
              USE_EXTERNAL_DEVICE_EXAMPLE);
     $display("%t: the parameter CLK_FREQUENCY is %d KHz", $time, CLK_FREQUENCY);
+`ifdef NO_CPU
+    $display("THIS CONFIGURATION DOES NOT INCLUDE A CPU!");
+    $display("YOU HAVE TO PLUG YOUR CPU TO X-HEEP");
+`endif
   end
 
 `ifdef USE_UPF
@@ -233,12 +303,6 @@ module testharness #(
       .i2c_sda_io(gpio[30]),
       .exit_value_o,
       .intr_vector_ext_i(intr_vector_ext),
-      .xif_compressed_if(ext_if),
-      .xif_issue_if(ext_if),
-      .xif_commit_if(ext_if),
-      .xif_mem_if(ext_if),
-      .xif_mem_result_if(ext_if),
-      .xif_result_if(ext_if),
       .ext_xbar_master_req_i(heep_slave_req),
       .ext_xbar_master_resp_o(heep_slave_resp),
       .ext_core_instr_req_o(heep_core_instr_req),
@@ -261,6 +325,26 @@ module testharness #(
       .external_subsystem_rst_no(external_subsystem_rst_n),
       .external_ram_banks_set_retentive_no(external_ram_banks_set_retentive_n),
       .external_subsystem_clkgate_en_no(external_subsystem_clkgate_en_n),
+`ifndef NO_CPU
+      .xif_compressed_if(ext_if),
+      .xif_issue_if(ext_if),
+      .xif_commit_if(ext_if),
+      .xif_mem_if(ext_if),
+      .xif_mem_result_if(ext_if),
+      .xif_result_if(ext_if),
+`else
+      .external_cpu_clk_o(external_cpu_clk),
+      .external_cpu_rst_no(external_cpu_rst),
+      .external_cpu_core_instr_req_i(external_cpu_core_instr_req),
+      .external_cpu_core_instr_resp_o(external_cpu_core_instr_resp),
+      .external_cpu_core_data_req_i(external_cpu_core_data_req),
+      .external_cpu_core_data_resp_o(external_cpu_core_data_resp),
+      .external_cpu_irq_o(external_cpu_irq),
+      .external_cpu_irq_ack_i(external_cpu_irq_ack),
+      .external_cpu_irq_id_i(external_cpu_irq_id),
+      .external_cpu_debug_req_o(external_cpu_debug_req),
+      .external_cpu_core_sleep_i(external_cpu_core_sleep),
+`endif
       .ext_dma_slot_tx_i(iffifo_in_ready),
       .ext_dma_slot_rx_i(iffifo_out_valid)
   );
@@ -590,6 +674,7 @@ module testharness #(
       );
 `endif
 
+`ifndef NO_CPU
       if ((core_v_mini_mcu_pkg::CpuType == cv32e40x || core_v_mini_mcu_pkg::CpuType == cv32e40px) && X_EXT != 0) begin: gen_fpu_ss_wrapper
         fpu_ss_wrapper #(
             .PULP_ZFINX(ZFINX),
@@ -612,7 +697,7 @@ module testharness #(
             .xif_result_if(ext_if)
         );
       end
-
+`endif
     end else begin : gen_DONT_USE_EXTERNAL_DEVICE_EXAMPLE
       assign slow_ram_slave_resp.gnt = '0;
       assign slow_ram_slave_resp.rdata = '0;

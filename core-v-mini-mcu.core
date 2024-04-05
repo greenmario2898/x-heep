@@ -285,6 +285,10 @@ parameters:
     datatype: bool
     paramtype: vlogdefine
     default: false
+  NO_CPU:
+    datatype: bool
+    paramtype: vlogdefine
+    default: false
   FPGA_NEXYS:
     datatype: bool
     paramtype: vlogdefine
@@ -371,6 +375,7 @@ targets:
     - USE_EXTERNAL_DEVICE_EXAMPLE
     - USE_UPF
     - REMOVE_OBI_FIFO
+    - NO_CPU
     tools:
       modelsim:
         vlog_options:

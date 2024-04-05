@@ -50,6 +50,7 @@ module x_heep_system
 
     input logic ext_dma_slot_tx_i,
     input logic ext_dma_slot_rx_i,
+% if cpu_type != "none":
 
     // eXtension interface
     if_xif.cpu_compressed xif_compressed_if,
@@ -58,6 +59,22 @@ module x_heep_system
     if_xif.cpu_mem        xif_mem_if,
     if_xif.cpu_mem_result xif_mem_result_if,
     if_xif.cpu_result     xif_result_if,
+% endif
+
+% if cpu_type == "none":
+
+    output logic        external_cpu_clk_o,
+    output logic        external_cpu_rst_no,
+    input  obi_req_t    external_cpu_core_instr_req_i,
+    output obi_resp_t   external_cpu_core_instr_resp_o,
+    input  obi_req_t    external_cpu_core_data_req_i,
+    output obi_resp_t   external_cpu_core_data_resp_o,
+    output logic [31:0] external_cpu_irq_o,
+    input  logic        external_cpu_irq_ack_i,
+    input  logic [ 4:0] external_cpu_irq_id_i,
+    output logic        external_cpu_debug_req_o,
+    input  logic        external_cpu_core_sleep_i,
+% endif
 
 % for pad in total_pad_list:
 ${pad.x_heep_system_interface}
@@ -104,12 +121,14 @@ ${pad.internal_signals}
 ${pad.core_v_mini_mcu_bonding}
 % endfor
     .intr_vector_ext_i,
+% if cpu_type != "none":
     .xif_compressed_if,
     .xif_issue_if,
     .xif_commit_if,
     .xif_mem_if,
     .xif_mem_result_if,
     .xif_result_if,
+% endif
     .pad_req_o(pad_req),
     .pad_resp_i(pad_resp),
     .ext_xbar_master_req_i,
@@ -141,6 +160,19 @@ ${pad.core_v_mini_mcu_bonding}
     .external_ram_banks_set_retentive_no,
     .external_subsystem_clkgate_en_no,
     .exit_value_o,
+% if cpu_type == "none":
+    .external_cpu_clk_o,
+    .external_cpu_rst_no,
+    .external_cpu_core_instr_req_i,
+    .external_cpu_core_instr_resp_o,
+    .external_cpu_core_data_req_i,
+    .external_cpu_core_data_resp_o,
+    .external_cpu_irq_o,
+    .external_cpu_irq_ack_i,
+    .external_cpu_irq_id_i,
+    .external_cpu_debug_req_o,
+    .external_cpu_core_sleep_i,
+% endif
     .ext_dma_slot_tx_i,
     .ext_dma_slot_rx_i
   );
