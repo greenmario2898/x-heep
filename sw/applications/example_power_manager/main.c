@@ -184,29 +184,27 @@ int main(int argc, char *argv[])
     dma_target_t tgt_dst;
     dma_target_t tgt_addr = {
         .ptr = NULL,
-        .inc_du = 1,
-        .size_du = 0,
+        .inc_d1_du = 1,
         .trig = DMA_TRIG_MEMORY,
     };
     dma_trans_t trans;
 
     // Initialize the DMA for the next tests
     tgt_src.ptr = (uint8_t *)test_data_4B;
-    tgt_src.inc_du = 1;
-    tgt_src.size_du = TEST_DATA_SIZE;
+    tgt_src.inc_d1_du = 1;
     tgt_src.trig = DMA_TRIG_MEMORY;
     tgt_src.type = DMA_DATA_TYPE_WORD;
     tgt_src.env = NULL;
     tgt_src.inc_d2_du = 0;
 
     tgt_dst.ptr = (uint8_t *)copied_data_4B;
-    tgt_dst.inc_du = 1;
-    tgt_dst.size_du = TEST_DATA_SIZE;
+    tgt_dst.inc_d1_du = 1;
     tgt_dst.trig = DMA_TRIG_MEMORY;
     tgt_dst.type = DMA_DATA_TYPE_WORD;
     tgt_dst.env = NULL;
     tgt_dst.inc_d2_du = 0;
 
+    trans.size_d1_du = TEST_DATA_SIZE;
     trans.src = &tgt_src;
     trans.dst = &tgt_dst;
     trans.src_addr = &tgt_addr;

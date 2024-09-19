@@ -4,6 +4,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Author: Tommaso Terzano <tommaso.terzano@epfl.ch>
+ *                         <tommaso.terzano@gmail.com>
  *  
  *  Info: Example application of matrix manipulation by exploiting the 2D DMA.
  *        In this code, there are some optional features:
@@ -43,8 +44,8 @@
 /* Parameters */
 
 /* Size of the extracted matrix (including strides on the input, excluding strides on the outputs) */
-#define SIZE_EXTR_D1 10
-#define SIZE_EXTR_D2 10
+#define SIZE_EXTR_D1 3
+#define SIZE_EXTR_D2 3
 
 /* Set strides of the input ad output matrix */
 #define STRIDE_IN_D1 1
@@ -136,18 +137,14 @@ int main()
     #endif
 
     tgt_src.ptr = (uint8_t *) test_data;
-    tgt_src.inc_du = SRC_INC_D1;
+    tgt_src.inc_d1_du = SRC_INC_D1;
     tgt_src.inc_d2_du = SRC_INC_D2;
-    tgt_src.size_du = SIZE_EXTR_D1;
-    tgt_src.size_d2_du = SIZE_EXTR_D2;
     tgt_src.trig = DMA_TRIG_MEMORY;
     tgt_src.type = DMA_DATA_TYPE;
     
     tgt_dst.ptr = (uint8_t *)  copied_data_2D_DMA;
-    tgt_dst.inc_du = DST_INC_D1;
+    tgt_dst.inc_d1_du = DST_INC_D1;
     tgt_dst.inc_d2_du = DST_INC_D2;
-    tgt_dst.size_du = OUT_D1_PAD_STRIDE;
-    tgt_dst.size_d2_du = OUT_D2_PAD_STRIDE;
     tgt_dst.trig = DMA_TRIG_MEMORY;
     tgt_dst.type = DMA_DATA_TYPE;
 
@@ -159,6 +156,8 @@ int main()
     trans.pad_bottom_du  = BOTTOM_PAD,
     trans.pad_left_du    = LEFT_PAD,
     trans.pad_right_du   = RIGHT_PAD,
+    trans.size_d1_du     = SIZE_EXTR_D1;
+    trans.size_d2_du     = SIZE_EXTR_D2;
     trans.win_du         = 0,
     trans.end            = DMA_TRANS_END_INTR;
     
@@ -322,15 +321,13 @@ int main()
     #endif
 
     tgt_src.ptr            = (uint8_t *) test_data;
-    tgt_src.inc_du         = SRC_INC_TRSP_D1;
+    tgt_src.inc_d1_du      = SRC_INC_TRSP_D1;
     tgt_src.inc_d2_du      = SRC_INC_TRSP_D2;
-    tgt_src.size_du        = SIZE_EXTR_D1;
-    tgt_src.size_d2_du     = SIZE_EXTR_D2;
     tgt_src.trig           = DMA_TRIG_MEMORY;
     tgt_src.type           = DMA_DATA_TYPE;
 
     tgt_dst.ptr            = (uint8_t *) copied_data_2D_DMA;
-    tgt_dst.inc_du         = DST_INC_D1;
+    tgt_dst.inc_d1_du      = DST_INC_D1;
     tgt_dst.inc_d2_du      = DST_INC_D2;
     tgt_dst.trig           = DMA_TRIG_MEMORY;
 
@@ -343,6 +340,8 @@ int main()
     trans.pad_left_du    = LEFT_PAD;
     trans.pad_right_du   = RIGHT_PAD;
     trans.dim_inv        = TRANSPOSITION_EN;
+    trans.size_d1_du     = SIZE_EXTR_D1;
+    trans.size_d2_du     = SIZE_EXTR_D2;
     trans.win_du         = 0,
     trans.end            = DMA_TRANS_END_INTR;
     
@@ -501,15 +500,13 @@ int main()
     #endif
 
     tgt_src.ptr            = (uint8_t *) test_data;
-    tgt_src.inc_du         = SRC_INC_D1;
-    tgt_src.size_du        = SIZE_EXTR_D1;
+    tgt_src.inc_d1_du      = SRC_INC_D1;
     tgt_src.inc_d2_du      = 0;
-    tgt_src.size_d2_du     = 0;
     tgt_src.trig           = DMA_TRIG_MEMORY;
     tgt_src.type           = DMA_DATA_TYPE;
 
     tgt_dst.ptr            = (uint8_t *) copied_data_1D_DMA;
-    tgt_dst.inc_du         = DST_INC_D1;
+    tgt_dst.inc_d1_du      = DST_INC_D1;
     tgt_dst.inc_d2_du      = 0;
     tgt_dst.trig           = DMA_TRIG_MEMORY;
 
@@ -523,6 +520,8 @@ int main()
     trans.pad_right_du   = RIGHT_PAD;
     trans.dim_inv        = 0;
     trans.win_du         = 0;
+    trans.size_d1_du     = SIZE_EXTR_D1;
+    trans.size_d2_du     = 0;
     trans.end            = DMA_TRANS_END_INTR;
 
     dma_init(NULL);
@@ -731,25 +730,25 @@ int main()
                     peri );
 
     /* Padding configuration */
-    write_register( TOP_PAD * DMA_DATA_TYPE_2_SIZE( DMA_DATA_TYPE),
+    write_register( TOP_PAD,
                     DMA_PAD_TOP_REG_OFFSET,
                     DMA_PAD_TOP_PAD_MASK,
                     DMA_PAD_TOP_PAD_OFFSET,
                     peri );
 
-    write_register( RIGHT_PAD * DMA_DATA_TYPE_2_SIZE( DMA_DATA_TYPE),
+    write_register( RIGHT_PAD,
                     DMA_PAD_RIGHT_REG_OFFSET,
                     DMA_PAD_RIGHT_PAD_MASK,
                     DMA_PAD_RIGHT_PAD_OFFSET,
                     peri );
 
-    write_register( LEFT_PAD * DMA_DATA_TYPE_2_SIZE( DMA_DATA_TYPE),
+    write_register( LEFT_PAD,
                     DMA_PAD_LEFT_REG_OFFSET,
                     DMA_PAD_LEFT_PAD_MASK,
                     DMA_PAD_LEFT_PAD_OFFSET,
                     peri );
 
-    write_register( BOTTOM_PAD * DMA_DATA_TYPE_2_SIZE( DMA_DATA_TYPE),
+    write_register( BOTTOM_PAD,
                     DMA_PAD_BOTTOM_REG_OFFSET,
                     DMA_PAD_BOTTOM_PAD_MASK,
                     DMA_PAD_BOTTOM_PAD_OFFSET,
@@ -757,13 +756,13 @@ int main()
 
     /* Set the sizes */
 
-    write_register( SIZE_EXTR_D2 * DMA_DATA_TYPE_2_SIZE( DMA_DATA_TYPE),
+    write_register( SIZE_EXTR_D2,
                     DMA_SIZE_D2_REG_OFFSET,
                     DMA_SIZE_D2_SIZE_MASK,
                     DMA_SIZE_D2_SIZE_OFFSET,
                     peri );
 
-    write_register( SIZE_EXTR_D1 * DMA_DATA_TYPE_2_SIZE( DMA_DATA_TYPE),
+    write_register( SIZE_EXTR_D1,
                     DMA_SIZE_D1_REG_OFFSET,
                     DMA_SIZE_D1_SIZE_MASK,
                     DMA_SIZE_D1_SIZE_OFFSET,
